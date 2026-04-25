@@ -142,7 +142,10 @@ export default function App() {
         {step === STEPS.DONE && resultUrl && (
           <div className="result-box">
             <p className="result-label">✅ 处理完成</p>
-            <img src={resultUrl} alt="结果" />
+            <img
+              src={`/.netlify/functions/image-proxy?url=${encodeURIComponent(resultUrl)}`}
+              alt="结果"
+            />
             <a
               className="btn-secondary"
               href={resultUrl}
