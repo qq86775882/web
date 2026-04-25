@@ -28,6 +28,7 @@ export default function App() {
   const [resultUrl, setResultUrl] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [progress, setProgress] = useState('');
+  const [mode, setMode] = useState('file');  // 'file' | 'url'
 
   const handleFile = useCallback((f) => {
     if (!f.type.startsWith('image/')) {
@@ -37,10 +38,36 @@ export default function App() {
     setFile(f);
     setResultUrl(null);
     setErrorMsg('');
-
     const reader = new FileReader();
     reader.onload = (e) => setPreview(e.target.result);
     reader.readAsDataURL(f);
+  }, []);
+
+  const handleUrl = useCallback(async (url) => {
+    setErrorMsg('');
+    setResultUrl(null);
+    try {
+      setStep('加载URL图片…');
+      // 通过 image-proxy 下载（避免 CORS）
+      const proxyUrl = `/.netlify/functions/image-proxy?url=${encodeURIComponent(url)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error('URL 图片下载失败');
+
+      const blob = await res.blob();
+      const contentType = res.headers.get('Content-Type') || 'image/jpeg';
+
+      // 提取文件名
+      const urlObj = new URL(url);
+      let name = urlObj.pathname.split('/').pop() || 'image.jpg';
+
+      const f = new File([blob], name, { type: contentType });
+      setFile(f);
+      setPreview(url);  // 直接使用原 URL 做预览
+      setStep(STEPS.IDLE);
+    } catch (e) {
+      setErrorMsg('图片链接无效或无法访问');
+      setStep(STEPS.IDLE);
+    }
   }, []);
 
   const doProcess = useCallback(async () => {
@@ -49,15 +76,12 @@ export default function App() {
     setResultUrl(null);
 
     try {
-      // 1. 登录
       setStep(STEPS.LOGGING);
       const token = await accountLogin();
 
-      // 2. 上传原始图片
       setStep(STEPS.UPLOADING);
       const imageUrl = await uploadFile(token, file);
 
-      // 3. AI 分割
       setStep(STEPS.SegmentING);
       const segmentId = await imageSegment(token, imageUrl);
       setProgress('等待分割结果…');
@@ -65,15 +89,12 @@ export default function App() {
         if (info.result?.status) setProgress(`分割状态: ${info.result.status}`);
       });
 
-      // 4. 处理掩码（Canvas 替代 PIL）
       setStep(STEPS.PROCESSING_MASK);
       const maskUrl = segmentResult.resultUrl;
       const colors = segmentResult.autoSelect || [];
       if (!colors.length) throw new Error('AI 未识别到可处理区域');
-
       const maskBlob = await processMaskImage(maskUrl, colors);
 
-      // 5. 上传处理后的掩码
       setStep(STEPS.MASK_UPLOADING);
       const processedMaskUrl = await uploadFile(
         token,
@@ -81,7 +102,6 @@ export default function App() {
         'image_undress'
       );
 
-      // 6. AI 生成
       setStep(STEPS.Generating);
       const undressId = await imageUndress(token, imageUrl, processedMaskUrl);
       setProgress('等待生成结果…');
@@ -107,10 +127,31 @@ export default function App() {
     <div className="app">
       <div className="card">
         <h1>🎨 图片处理工具</h1>
-        <p className="subtitle">纯前端运行 · 无需后端</p>
+        <p className="subtitle">纯前端运行 · 支持文件上传和链接</p>
 
-        {/* 上传区域 */}
-        <UploadArea onFile={handleFile} disabled={loading} />
+        {/* 模式切换 */}
+        <div className="mode-tabs">
+          <button
+            className={`mode-tab ${mode === 'file' ? 'active' : ''}`}
+            onClick={() => { setMode('file'); setFile(null); setPreview(null); }}
+            disabled={loading}
+          >📁 本地上传</button>
+          <button
+            className={`mode-tab ${mode === 'url' ? 'active' : ''}`}
+            onClick={() => { setMode('url'); setFile(null); setPreview(null); }}
+            disabled={loading}
+          >🔗 图片链接</button>
+        </div>
+
+        {/* 文件模式 */}
+        {mode === 'file' && (
+          <UploadArea onFile={handleFile} disabled={loading} />
+        )}
+
+        {/* URL 模式 */}
+        {mode === 'url' && (
+          <UrlInput onUrl={handleUrl} disabled={loading} />
+        )}
 
         {/* 预览 */}
         {preview && <ImagePreview src={preview} label="预览图片" />}
@@ -166,35 +207,44 @@ export default function App() {
 
 function UploadArea({ onFile, disabled }) {
   const [dragOver, setDragOver] = useState(false);
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const f = e.dataTransfer.files[0];
-    if (f) onFile(f);
-  };
-
   return (
     <label
       className={`upload-area ${dragOver ? 'dragover' : ''} ${disabled ? 'disabled' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
-      onDrop={handleDrop}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) onFile(f); }}
     >
       <span className="upload-icon">📤</span>
       <span className="upload-text">点击或拖拽上传图片</span>
       <span className="upload-hint">支持 JPG、PNG 格式</span>
+      <input type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files[0]; if (f) onFile(f); }} disabled={disabled} />
+    </label>
+  );
+}
+
+function UrlInput({ onUrl, disabled }) {
+  const [value, setValue] = useState('');
+
+  const submit = () => {
+    const trimmed = value.trim();
+    if (trimmed) onUrl(trimmed);
+  };
+
+  return (
+    <div className="url-input-area">
       <input
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files[0];
-          if (f) onFile(f);
-        }}
+        className="url-field"
+        type="text"
+        placeholder="粘贴图片链接，如 https://example.com/photo.jpg"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
         disabled={disabled}
       />
-    </label>
+      <button className="url-btn" onClick={submit} disabled={disabled || !value.trim()}>
+        加载
+      </button>
+    </div>
   );
 }
 
@@ -202,7 +252,7 @@ function ImagePreview({ src, label }) {
   return (
     <div className="preview-box">
       <p className="preview-label">{label}</p>
-      <img src={src} alt={label} />
+      <img src={src} alt={label} referrerPolicy="no-referrer" />
     </div>
   );
 }

@@ -23,6 +23,78 @@ h1 {
   margin: 6px 0 28px;
 }
 
+/* URL 输入 */
+.url-input-area {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.url-field {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.25s;
+}
+.url-field:focus {
+  border-color: #667eea;
+}
+.url-btn {
+  padding: 0 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.25s;
+  white-space: nowrap;
+}
+.url-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.url-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 模式切换 */
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #d0d5dd;
+}
+.mode-tab {
+  flex: 1;
+  padding: 10px 0;
+  text-align: center;
+  background: #fafbfc;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #666;
+}
+.mode-tab:hover:not(:disabled) {
+  background: #f0f4ff;
+}
+.mode-tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-weight: 600;
+}
+.mode-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 上传区域 */
 .upload-area {
   display: flex;
