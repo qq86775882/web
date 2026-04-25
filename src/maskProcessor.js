@@ -8,13 +8,14 @@
 
 /**
  * 将掩码图片中的指定颜色替换为白色，其余透明，返回 PNG Blob
- * @param {string} maskUrl - 掩码图片 URL
- * @param {number[][]} targetColors - 目标颜色列表，如 [[255,255,0], [255,0,255]]
+ * @param {string} maskUrl - 掩码图片原始 URL（files.myimg.ai）
+ * @param {number[][]} targetColors - 目标颜色列表
  * @returns {Promise<Blob>} PNG 格式的 Blob
  */
 export async function processMaskImage(maskUrl, targetColors) {
-  // 1. 加载图片
-  const img = await loadImage(maskUrl);
+  // 1. 通过 Netlify 函数代理加载图片（解决 CORS）
+  const proxyUrl = `/.netlify/functions/image-proxy?url=${encodeURIComponent(maskUrl)}`;
+  const img = await loadImage(proxyUrl);
 
   // 2. 绘制到 canvas
   const canvas = document.createElement('canvas');

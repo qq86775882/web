@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   accountLogin,
-  uploadPresign,
+  uploadFile,
   imageSegment,
   pollUntilDone,
   imageUndress,
@@ -55,7 +55,7 @@ export default function App() {
 
       // 2. 上传原始图片
       setStep(STEPS.UPLOADING);
-      const imageUrl = await uploadPresign(token, file);
+      const imageUrl = await uploadFile(token, file);
 
       // 3. AI 分割
       setStep(STEPS.SegmentING);
@@ -75,7 +75,7 @@ export default function App() {
 
       // 5. 上传处理后的掩码
       setStep(STEPS.MASK_UPLOADING);
-      const processedMaskUrl = await uploadPresign(
+      const processedMaskUrl = await uploadFile(
         token,
         new File([maskBlob], 'mask.png', { type: 'image/png' }),
         'image_undress'

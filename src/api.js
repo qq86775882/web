@@ -37,22 +37,20 @@ export async function accountLogin() {
   throw new Error('登录失败');
 }
 
-// --- 获取预签名上传 URL，并上传文件 ---
-export async function uploadPresign(token, file, actionType = 'image_undress') {
-  // 1. 获取预签名 URL
-  const presignRes = await fetch(
-    `${BASE}/upload/presign?action_type=${actionType}&content_type=${encodeURIComponent(file.type || 'image/jpeg')}`,
-    { method: 'POST', headers: headers(token) }
-  );
-  const presignData = await presignRes.json();
-  const uploadUrl = presignData.result?.presignUrl;
-  const imageUrl = presignData.result?.url;
-  if (!uploadUrl) throw new Error('获取上传URL失败');
+// --- 上传文件（通过 Netlify Function 代理，解决预签名URL的 CORS 问题）---
+export async function uploadFile(token, file, actionType = 'image_undress') {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('token', token);
+  form.append('actionType', actionType);
 
-  // 2. PUT 文件到预签名 URL
-  await fetch(uploadUrl, { method: 'PUT', body: file });
-
-  return imageUrl;
+  const res = await fetch('/.netlify/functions/upload-proxy', {
+    method: 'POST',
+    body: form,
+  });
+  const data = await res.json();
+  if (data.imageUrl) return data.imageUrl;
+  throw new Error(data.error || '上传失败');
 }
 
 // --- 图片分割 ---
