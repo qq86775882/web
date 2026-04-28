@@ -22,11 +22,16 @@ async function store() {
 // Token
 function signToken(u) {
   const payload = `${u}:${Date.now() + 86400000}`;
-  return Buffer.from(`${payload}:${crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('hex')}`).toString('base64url');
+  const sig = crypto.createHmac('sha256', TOKEN_SECRET).update(payload).digest('hex');
+  const raw = `${payload}:${sig}`;
+  // base64 → base64url
+  return Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 function verifyToken(t) {
   try {
-    const raw = Buffer.from(t, 'base64url').toString();
+    // base64url → base64
+    const b64 = t.replace(/-/g, '+').replace(/_/g, '/');
+    const raw = Buffer.from(b64, 'base64').toString();
     const parts = raw.split(':');
     const sig = parts.pop();
     const payload = parts.join(':');
@@ -34,7 +39,7 @@ function verifyToken(t) {
     const [u, exp] = payload.split(':');
     if (Date.now() > parseInt(exp)) return null;
     return u;
-  } catch { return null; }
+  } catch (e) { console.error('verifyToken error:', e); return null; }
 }
 
 export default async function handler(req) {
