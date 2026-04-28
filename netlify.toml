@@ -12,6 +12,9 @@
 [functions."check-job"]
   timeout = 25
 
+[functions."admin"]
+  timeout = 10
+
 [[redirects]]
   from = "/api/*"
   to = "https://api.myimg.ai/api/:splat"
