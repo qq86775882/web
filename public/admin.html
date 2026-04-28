@@ -7,219 +7,238 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { font-family: -apple-system, sans-serif; background:#0f0f1a; color:#e0e0e0; min-height:100vh; }
+
+/* 登录页 */
+.login-box { max-width:360px; margin:100px auto; background:#1a1a2e; border-radius:12px; padding:32px; border:1px solid #2a2a4a; }
+.login-box h2 { text-align:center; color:#ff6b9d; margin-bottom:24px; }
+.login-box input { width:100%; background:#0f0f1a; border:1px solid #2a2a4a; color:#e0e0e0; padding:10px; border-radius:6px; margin-bottom:12px; font-size:14px; }
+.login-box input:focus { border-color:#ff6b9d; outline:none; }
+.login-box button { width:100%; background:#ff6b9d; color:#fff; border:none; padding:10px; border-radius:6px; cursor:pointer; font-size:14px; }
+.login-box .err { color:#f55; text-align:center; margin-top:8px; font-size:13px; }
+
+/* 主界面 */
 nav { background:#1a1a2e; padding:12px 24px; display:flex; gap:8px; align-items:center; border-bottom:1px solid #2a2a4a; }
 nav h1 { font-size:18px; margin-right:auto; color:#ff6b9d; }
-nav button, nav a { background:#2a2a4a; color:#ccc; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; text-decoration:none; font-size:14px; }
-nav button.active, nav a.active { background:#ff6b9d; color:#fff; }
+nav button { background:#2a2a4a; color:#ccc; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:14px; }
+nav button.active, nav button:hover { background:#ff6b9d; color:#fff; }
+nav .logout { background:#3a1a1a; }
 main { max-width:1200px; margin:0 auto; padding:24px; }
 .card { background:#1a1a2e; border-radius:12px; padding:20px; margin-bottom:20px; border:1px solid #2a2a4a; }
 .card h2 { font-size:16px; margin-bottom:16px; color:#ff6b9d; }
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:24px; }
 .stat { background:#1a1a2e; border-radius:10px; padding:16px; text-align:center; border:1px solid #2a2a4a; }
 .stat .num { font-size:28px; font-weight:700; color:#ff6b9d; }
 .stat .label { font-size:12px; color:#888; margin-top:4px; }
+
 table { width:100%; border-collapse:collapse; font-size:13px; }
 th { text-align:left; padding:10px 8px; border-bottom:1px solid #2a2a4a; color:#888; font-weight:500; }
 td { padding:8px; border-bottom:1px solid #1f1f3a; }
-.badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; }
-.badge-done { background:#1a3a1a; color:#5f5; }
-.badge-processing { background:#3a3a1a; color:#ff5; }
-.badge-failed { background:#3a1a1a; color:#f55; }
-.btn { background:#ff6b9d; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; }
+.badge { padding:2px 8px; border-radius:4px; font-size:11px; }
+.bg-done { background:#1a3a1a; color:#5f5; }
+.bg-proc { background:#3a3a1a; color:#ff5; }
+.bg-off { background:#3a1a1a; color:#f55; }
+
+.btn { background:#ff6b9d; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px; }
 .btn-sm { padding:4px 10px; font-size:11px; }
 .btn-danger { background:#e04040; }
 .btn-outline { background:transparent; border:1px solid #ff6b9d; color:#ff6b9d; }
-.form-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
 input, select { background:#0f0f1a; border:1px solid #2a2a4a; color:#e0e0e0; padding:8px 12px; border-radius:6px; font-size:13px; }
-input:focus { border-color:#ff6b9d; outline:none; }
-.flex-between { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-a { color:#ff6b9d; }
+.flex-b { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.form-inline { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+.url-link { max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; }
 .empty { text-align:center; padding:40px; color:#666; }
-.url-link { max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block; vertical-align:middle; }
-.toast { position:fixed; top:20px; right:20px; background:#ff6b9d; color:#fff; padding:12px 20px; border-radius:8px; z-index:999; animation:fadeIn .3s; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
 .tab-content { display:none; }
 .tab-content.active { display:block; }
+.toast { position:fixed; top:20px; right:20px; background:#ff6b9d; color:#fff; padding:12px 20px; border-radius:8px; z-index:9999; }
+.hidden { display:none !important; }
 </style>
 </head>
 <body>
+
+<!-- ═══ 登录页 ═══ -->
+<div id="login-page">
+  <div class="login-box">
+    <h2>🔐 后台管理登录</h2>
+    <input id="login-user" placeholder="账号" value="admin">
+    <input id="login-pass" type="password" placeholder="密码" value="123456" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">登 录</button>
+    <div id="login-err" class="err"></div>
+  </div>
+</div>
+
+<!-- ═══ 管理界面 ═══ -->
+<div id="admin-page" class="hidden">
 <nav>
   <h1>🖼️ 图片处理后台</h1>
-  <a href="/" target="_blank">首页</a>
-  <button id="tab-keys" class="active" onclick="showTab('keys')">🔑 密钥管理</button>
-  <button id="tab-jobs" onclick="showTab('jobs')">📋 作业记录</button>
+  <button id="ntab-keys" class="active" onclick="switchTab('keys')">🔑 密钥管理</button>
+  <button id="ntab-jobs" onclick="switchTab('jobs')">📋 作业记录</button>
+  <button class="logout" onclick="logout()">退出</button>
 </nav>
 <main>
+  <div id="stats-bar" class="stats"></div>
 
-<!-- 统计卡片 -->
-<div id="stats-bar" class="stats"></div>
-
-<!-- 密钥管理 TAB -->
-<div id="panel-keys" class="tab-content active">
-  <div class="card">
-    <div class="flex-between">
-      <h2>🔑 API 密钥列表</h2>
-      <button class="btn" onclick="showAddKey()">+ 添加密钥</button>
+  <div id="panel-keys" class="tab-content active">
+    <div class="card">
+      <div class="flex-b"><h2>🔑 API 密钥</h2><button class="btn" onclick="showAdd()">+ 生成新密钥</button></div>
+      <div id="add-form" style="display:none" class="form-inline">
+        <input id="new-key" placeholder="密钥 (留空自动生成)">
+        <input id="new-label" placeholder="标签/给谁用的">
+        <input id="new-quota" type="number" value="100" style="width:80px" placeholder="配额">
+        <button class="btn" onclick="addKey()">确认</button>
+        <button class="btn btn-outline" onclick="hideAdd()">取消</button>
+      </div>
+      <table><thead><tr><th>标签</th><th>密钥</th><th>配额</th><th>已用</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody id="keys-tbody"><tr><td colspan="6" class="empty">加载中...</td></tr></tbody></table>
     </div>
-    <div id="add-key-form" style="display:none;" class="form-row" style="margin-bottom:12px;">
-      <input id="new-key" placeholder="密钥 (secret)" style="flex:1">
-      <input id="new-label" placeholder="标签/备注">
-      <input id="new-quota" placeholder="配额" type="number" value="100" style="width:80px">
-      <button class="btn" onclick="addKey()">确认添加</button>
-      <button class="btn btn-outline" onclick="hideAddKey()">取消</button>
-    </div>
-    <table><thead><tr><th>标签</th><th>密钥</th><th>配额</th><th>已用</th><th>状态</th><th>操作</th></tr></thead>
-    <tbody id="keys-tbody"><tr><td colspan="6" class="empty">加载中...</td></tr></tbody></table>
   </div>
-</div>
 
-<!-- 作业记录 TAB -->
-<div id="panel-jobs" class="tab-content">
-  <div class="card">
-    <div class="flex-between">
-      <h2>📋 处理记录</h2>
-      <button class="btn btn-outline btn-sm" onclick="clearJobs()">清空记录</button>
+  <div id="panel-jobs" class="tab-content">
+    <div class="card">
+      <div class="flex-b"><h2>📋 处理记录</h2><button class="btn btn-outline btn-sm" onclick="clearJobs()">清空</button></div>
+      <table><thead><tr><th>原图</th><th>结果</th><th>状态</th><th>密钥</th><th>时间</th></tr></thead>
+      <tbody id="jobs-tbody"><tr><td colspan="5" class="empty">加载中...</td></tr></tbody></table>
     </div>
-    <table><thead><tr><th>原图</th><th>结果</th><th>状态</th><th>密钥</th><th>时间</th></tr></thead>
-    <tbody id="jobs-tbody"><tr><td colspan="5" class="empty">加载中...</td></tr></tbody></table>
-    <div id="pagination" style="text-align:center;margin-top:12px;"></div>
   </div>
-</div>
-
 </main>
+</div>
 
 <script>
 const API = '/.netlify/functions/admin';
-const SECRET = 'qq86775582';
-let currentPage = 1, currentTab = 'keys';
+let token = localStorage.getItem('admin_token');
+let curTab = 'keys';
 
-async function api(action, body) {
-  const url = body
-    ? `${API}?action=${action}&adminSecret=${SECRET}`
-    : `${API}?action=${action}&adminSecret=${SECRET}`;
-  const res = await fetch(url, body ? {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({...body, adminSecret:SECRET})
-  } : {});
+// ═══ 登录 ═══
+async function doLogin() {
+  const u = document.getElementById('login-user').value;
+  const p = document.getElementById('login-pass').value;
+  try {
+    const res = await fetch(`${API}?action=login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
+    const d = await res.json();
+    if (!d.ok) { document.getElementById('login-err').textContent = d.error; return; }
+    token = d.token;
+    localStorage.setItem('admin_token', token);
+    showAdmin();
+  } catch(e) { document.getElementById('login-err').textContent = '网络错误'; }
+}
+
+function logout() {
+  localStorage.removeItem('admin_token');
+  token = null;
+  document.getElementById('login-page').classList.remove('hidden');
+  document.getElementById('admin-page').classList.add('hidden');
+}
+
+async function checkAuth() {
+  if (!token) return false;
+  const res = await fetch(`${API}?action=stats`, { headers:{Authorization:`Bearer ${token}`} });
+  if (res.status === 401) { logout(); return false; }
+  return true;
+}
+
+function showAdmin() {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('admin-page').classList.remove('hidden');
+  loadAll();
+}
+
+// ═══ API ═══
+async function call(action, body) {
+  const res = await fetch(`${API}?action=${action}`, {
+    method: body ? 'POST' : 'GET',
+    headers: { 'Content-Type': 'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (res.status === 401) { logout(); throw new Error('未登录'); }
   return res.json();
 }
 
-function showTab(t) { currentTab=t;
-  document.querySelectorAll('.tab-content').forEach(d=>d.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+t).classList.add('active');
-  document.getElementById('tab-'+t).classList.add('active');
-  if(t==='keys') loadKeys(); else loadJobs(); loadStats();
+// ═══ 加载 ═══
+async function loadAll() {
+  loadStats(); loadKeys(); if(curTab==='jobs') loadJobs();
 }
 
 async function loadStats() {
   try {
-    const d = await api('stats');
-    if (!d.ok) return;
+    const d = await call('stats');
     const s = d.stats;
     document.getElementById('stats-bar').innerHTML = `
-      <div class="stat"><div class="num">${s.totalKeys}</div><div class="label">密钥总数</div></div>
+      <div class="stat"><div class="num">${s.totalKeys}</div><div class="label">密钥数</div></div>
       <div class="stat"><div class="num">${s.totalQuota-s.totalUsed}</div><div class="label">剩余配额</div></div>
       <div class="stat"><div class="num">${s.totalJobs}</div><div class="label">总作业</div></div>
       <div class="stat"><div class="num">${s.doneJobs}</div><div class="label">已完成</div></div>
-      <div class="stat"><div class="num">${s.processingJobs}</div><div class="label">处理中</div></div>
-    `;
+      <div class="stat"><div class="num">${s.processingJobs}</div><div class="label">处理中</div></div>`;
   } catch(e) {}
 }
 
 async function loadKeys() {
   try {
-    const d = await api('listKeys');
-    const tbody = document.getElementById('keys-tbody');
-    if (!d.keys?.length) { tbody.innerHTML='<tr><td colspan="6" class="empty">暂无密钥，请添加</td></tr>'; return; }
-    tbody.innerHTML = d.keys.map(k => `
-      <tr>
-        <td>${k.label||'--'}</td>
-        <td><code>${k.key.slice(0,12)}...</code></td>
-        <td>${k.quota}</td>
-        <td>${k.used}</td>
-        <td><span class="badge ${k.enabled?'badge-done':'badge-failed'}">${k.enabled?'启用':'禁用'}</span></td>
-        <td>
-          <button class="btn btn-outline btn-sm" onclick="toggleKey('${k.id}',${!k.enabled})">${k.enabled?'禁用':'启用'}</button>
-          <button class="btn btn-outline btn-sm" onclick="resetQuota('${k.id}')">重置配额</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteKey('${k.id}')">删除</button>
-        </td>
-      </tr>`).join('');
-  } catch(e) { console.error(e); }
+    const d = await call('listKeys');
+    const tb = document.getElementById('keys-tbody');
+    if (!d.keys?.length) { tb.innerHTML='<tr><td colspan="6" class="empty">暂无密钥，请添加</td></tr>'; return; }
+    tb.innerHTML = d.keys.map(k=>`<tr>
+      <td>${k.label||'--'}</td>
+      <td><code>${k.key.slice(0,16)}...</code></td>
+      <td>${k.quota}</td>
+      <td>${k.used}</td>
+      <td><span class="badge ${k.enabled?'bg-done':'bg-off'}">${k.enabled?'启用':'禁用'}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="toggleKey('${k.id}',${!k.enabled})">${k.enabled?'禁用':'启用'}</button>
+        <button class="btn btn-outline btn-sm" onclick="resetQuota('${k.id}')">重置</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteKey('${k.id}')">删除</button>
+      </td></tr>`).join('');
+  } catch(e) {}
 }
 
 async function loadJobs() {
   try {
-    const d = await api('listJobs', null);
-    // need page param
-    const res = await fetch(`${API}?action=listJobs&adminSecret=${SECRET}&page=${currentPage}&size=20`);
-    const data = await res.json();
-    const tbody = document.getElementById('jobs-tbody');
-    if (!data.jobs?.length) { tbody.innerHTML='<tr><td colspan="5" class="empty">暂无记录</td></tr>'; return; }
-    tbody.innerHTML = data.jobs.map(j => `
-      <tr>
-        <td><a href="${j.imageUrl}" target="_blank" class="url-link">${j.imageUrl.split('/').pop()}</a></td>
-        <td>${j.resultUrl?`<a href="${j.resultUrl}" target="_blank" class="url-link">${j.resultUrl.split('/').pop()}</a>`:'--'}</td>
-        <td><span class="badge badge-${j.status==='done'?'done':'processing'}">${j.status==='done'?'完成':'处理中'}</span></td>
-        <td>${j.keyId}</td>
-        <td>${new Date(j.createdAt).toLocaleString('zh-CN')}</td>
-      </tr>`).join('');
-    document.getElementById('pagination').innerHTML = data.pagination?.pages > 1
-      ? `第${data.pagination.page}/${data.pagination.pages}页 (共${data.pagination.total}条)`
-      : '';
-  } catch(e) { console.error(e); }
+    const d = await call('listJobs');
+    const tb = document.getElementById('jobs-tbody');
+    if (!d.jobs?.length) { tb.innerHTML='<tr><td colspan="5" class="empty">暂无记录</td></tr>'; return; }
+    tb.innerHTML = d.jobs.map(j=>`<tr>
+      <td><a href="${j.imageUrl}" target="_blank" class="url-link">${j.imageUrl.split('/').pop()}</a></td>
+      <td>${j.resultUrl?`<a href="${j.resultUrl}" target="_blank" class="url-link">${j.resultUrl.split('/').pop()}</a>`:'--'}</td>
+      <td><span class="badge ${j.status==='done'?'bg-done':'bg-proc'}">${j.status==='done'?'完成':'处理中'}</span></td>
+      <td>${j.keyId}</td>
+      <td>${new Date(j.createdAt).toLocaleString('zh-CN')}</td></tr>`).join('');
+  } catch(e) {}
 }
 
-// ── 密钥操作 ──
-function showAddKey() { document.getElementById('add-key-form').style.display='flex'; }
-function hideAddKey() { document.getElementById('add-key-form').style.display='none'; }
+// ═══ 操作 ═══
+function switchTab(t) { curTab=t;
+  document.querySelectorAll('.tab-content').forEach(d=>d.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.logout)').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  document.getElementById('ntab-'+t).classList.add('active');
+  if(t==='jobs') loadJobs();
+}
+
+function showAdd() { document.getElementById('add-form').style.display='flex'; }
+function hideAdd() { document.getElementById('add-form').style.display='none'; }
 
 async function addKey() {
-  const key = document.getElementById('new-key').value.trim();
+  let key = document.getElementById('new-key').value.trim();
+  if (!key) key = 'sk-' + Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,6);
   const label = document.getElementById('new-label').value.trim();
   const quota = parseInt(document.getElementById('new-quota').value)||100;
-  if (!key) return alert('请输入密钥');
-  await api('addKey', {key, label, quota});
-  hideAddKey();
-  document.getElementById('new-key').value='';
-  loadKeys(); loadStats();
-  toast('✅ 密钥已添加');
+  await call('addKey', {key, label, quota});
+  hideAdd(); loadKeys(); loadStats();
+  toast('✅ 密钥已生成');
 }
 
-async function toggleKey(id, enabled) {
-  await api('updateKey', {id, enabled});
-  loadKeys(); loadStats();
-}
+async function toggleKey(id, en) { await call('updateKey',{id,enabled:en}); loadKeys(); }
+async function resetQuota(id) { await call('updateKey',{id,resetUsed:true}); loadKeys(); loadStats(); toast('✅ 已重置'); }
+async function deleteKey(id) { if(!confirm('确认删除？'))return; await call('deleteKey',{id}); loadKeys(); loadStats(); }
 
-async function resetQuota(id) {
-  await api('updateKey', {id, resetUsed:true});
-  loadKeys(); loadStats();
-  toast('✅ 配额已重置');
-}
+async function clearJobs() { if(!confirm('确认清空所有记录？'))return; await call('clearJobs'); loadJobs(); loadStats(); toast('🗑️ 已清空'); }
 
-async function deleteKey(id) {
-  if (!confirm('确认删除该密钥？')) return;
-  await api('deleteKey', {id});
-  loadKeys(); loadStats();
-  toast('🗑️ 密钥已删除');
-}
+function toast(m) { const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),2500); }
 
-async function clearJobs() {
-  if (!confirm('确认清空所有作业记录？')) return;
-  await fetch(`${API}?action=clearJobs&adminSecret=${SECRET}`, {method:'POST'});
-  loadJobs(); loadStats();
-  toast('🗑️ 记录已清空');
-}
-
-function toast(msg) {
-  const t = document.createElement('div'); t.className='toast'; t.textContent=msg;
-  document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 2500);
-}
-
-// ── 初始加载 ──
-loadStats(); loadKeys();
+// ═══ 启动 ═══
+(async ()=>{
+  if (token && await checkAuth()) { showAdmin(); }
+  else { document.getElementById('login-page').classList.remove('hidden'); }
+})();
 </script>
 </body>
 </html>

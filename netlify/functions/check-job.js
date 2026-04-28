@@ -5,18 +5,17 @@
  * Body: { jobId, secret }
  *
  * 根据 stage 自动推进: segmenting → generating → done
+ * 完成时自动调 admin API 更新作业记录
  */
 import crypto from 'crypto';
 import { PNG } from 'pngjs';
 
-const DEFAULT_SECRET = 'qq86775582';
 const MYIMG = 'https://api.myimg.ai/api';
 
 export default async function handler(req) {
   if (req.method !== 'POST') return Response.json({ error: 'Use POST' }, { status: 405 });
   try {
-    const { jobId, secret } = await req.json();
-    if (secret !== DEFAULT_SECRET) return Response.json({ error: 'Invalid secret' }, { status: 401 });
+    const { jobId } = await req.json();
     if (!jobId) return Response.json({ error: 'Missing jobId' }, { status: 400 });
 
     const state = decodeJob(jobId);
@@ -45,6 +44,19 @@ export default async function handler(req) {
       if (!done) return Response.json({ status: 'processing', stage: 'generating', hint: '生成中，请10秒后重试' });
 
       const resultUrl = done.resultUrl || done.imageUrl;
+
+      // ── 更新作业记录 ──
+      if (state.recordId) {
+        try {
+          const selfUrl = req.url.replace(/\/check-job.*/, '/admin?action=completeJob');
+          await fetch(selfUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recordId: state.recordId, resultUrl })
+          });
+        } catch (e) { console.warn('⚠️ 记录更新失败:', e.message); }
+      }
+
       return Response.json({ success: true, resultUrl, status: 'done', hint: '处理完成!' });
     }
 
@@ -56,11 +68,11 @@ export default async function handler(req) {
 
 function encodeJob(d) {
   const j = Buffer.from(JSON.stringify(d)).toString('base64url');
-  return `${j}.${crypto.createHmac('sha256', DEFAULT_SECRET).update(j).digest('base64url').slice(0, 16)}`;
+  return `${j}.${crypto.createHmac('sha256', 'start-job-secret').update(j).digest('base64url').slice(0, 16)}`;
 }
 function decodeJob(id) {
   const [j, s] = id.split('.');
-  if (s !== crypto.createHmac('sha256', DEFAULT_SECRET).update(j).digest('base64url').slice(0, 16)) throw new Error('Invalid jobId');
+  if (s !== crypto.createHmac('sha256', 'start-job-secret').update(j).digest('base64url').slice(0, 16)) throw new Error('Invalid jobId');
   return JSON.parse(Buffer.from(j, 'base64url').toString());
 }
 
@@ -71,10 +83,7 @@ async function upload(token, buf, ct, at) {
   return p.result.url;
 }
 async function undress(token, iu, mu) {
-  const r = await (await fetch(`${MYIMG}/image/undress`, {
-    method: 'POST', headers: { Authorization: token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageUrl: iu, maskUrl: mu, breastSize: 'large', bodyType: 'chubby', advance: true, website: 'myimg' })
-  })).json();
+  const r = await (await fetch(`${MYIMG}/image/undress`, { method: 'POST', headers: { Authorization: token, 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrl: iu, maskUrl: mu, breastSize: 'large', bodyType: 'chubby', advance: true, website: 'myimg' }) })).json();
   if (!r.actionId) throw new Error('undress失败');
   return r.actionId;
 }
