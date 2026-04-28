@@ -5,13 +5,22 @@
  * Body: { jobId }
  *
  * 每次调用只做一次轮询，快速返回状态。
- * 客户端持续调用直到 done。支持多任务异步并行。
+ * 支持多任务异步并行处理。
  */
 import crypto from 'crypto';
 import { PNG } from 'pngjs';
 
 const MYIMG = 'https://api.myimg.ai/api';
 const JOB_SECRET = 'job-secret-key-v1';
+
+// 懒加载 Blobs
+let _store = null;
+async function getStore() {
+  if (_store) return _store;
+  const { getStore } = await import('@netlify/blobs');
+  _store = getStore('imgproc');
+  return _store;
+}
 
 export default async function handler(req) {
   if (req.method !== 'POST') return Response.json({ error: 'Use POST' }, { status: 405 });
@@ -27,7 +36,6 @@ export default async function handler(req) {
       if (!segResult) return Response.json({ status: 'processing', stage: 'segmenting', hint: '分割中...' });
       if (segResult === 'failed') return Response.json({ error: '分割失败' }, { status: 500 });
 
-      // 分割完成 → 处理 mask → 调 undress
       const colors = segResult.autoSelect || [];
       if (!colors.length) return Response.json({ error: '未识别到可处理区域' }, { status: 400 });
 
@@ -51,12 +59,20 @@ export default async function handler(req) {
 
       const resultUrl = genResult.resultUrl || genResult.imageUrl;
 
-      // 更新记录
+      // ── 更新记录 ──
       if (state.recordId) {
         try {
-          const selfUrl = req.url.replace(/\/check-job.*/, '/admin?action=completeJob');
-          await fetch(selfUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recordId: state.recordId, resultUrl }) });
-        } catch (e) {}
+          const store = await getStore();
+          const raw = await store.get('jobs', { consistency: 'strong' });
+          const jobs = raw ? JSON.parse(raw) : [];
+          const idx = jobs.findIndex(j => j.id === state.recordId);
+          if (idx !== -1) {
+            jobs[idx].status = 'done';
+            jobs[idx].resultUrl = resultUrl;
+            jobs[idx].completedAt = new Date().toISOString();
+            await store.set('jobs', JSON.stringify(jobs));
+          }
+        } catch (e) { console.warn('记录更新失败:', e.message); }
       }
 
       return Response.json({ success: true, resultUrl, status: 'done', hint: '完成!' });
@@ -68,7 +84,6 @@ export default async function handler(req) {
   }
 }
 
-// ═══ 编码 ═══
 function encodeJob(d) {
   const j = Buffer.from(JSON.stringify(d)).toString('base64url');
   return `${j}.${crypto.createHmac('sha256', JOB_SECRET).update(j).digest('base64url').slice(0, 16)}`;
@@ -79,15 +94,13 @@ function decodeJob(id) {
   return JSON.parse(Buffer.from(j, 'base64url').toString());
 }
 
-// ═══ 单次轮询 ═══
 async function pollOnce(token, actionId) {
   const d = await (await fetch(`${MYIMG}/action/info?action_id=${actionId}&website=myimg`, { headers: { Authorization: token } })).json();
   if (d.result?.response) return JSON.parse(d.result.response);
   if (d.result?.status === 'failed') return 'failed';
-  return null; // still processing
+  return null;
 }
 
-// ═══ 工具 ═══
 async function download(url) { return Buffer.from(await (await fetch(url)).arrayBuffer()); }
 async function upload(token, buf, ct, at) {
   const p = await (await fetch(`${MYIMG}/upload/presign?action_type=${at}&content_type=${encodeURIComponent(ct)}`, { method: 'POST', headers: { Authorization: token } })).json();
