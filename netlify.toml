@@ -10,10 +10,10 @@
   timeout = 15
 
 [functions."check-job"]
-  timeout = 25
+  timeout = 30
 
 [functions."admin"]
-  timeout = 10
+  timeout = 30
 
 [[redirects]]
   from = "/api/*"

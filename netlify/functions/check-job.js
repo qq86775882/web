@@ -21,7 +21,7 @@ export default async function handler(req) {
     const state = decodeJob(jobId);
 
     if (state.stage === 'segmenting') {
-      const done = await poll(state.token, state.segmentId, 8, 1500);
+      const done = await poll(state.token, state.segmentId, 5, 2000);
       if (!done) return Response.json({ status: 'processing', stage: 'segmenting', hint: '分割中，请5秒后重试' });
 
       const colors = done.autoSelect || [];
