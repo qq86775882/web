@@ -187,8 +187,8 @@ async function loadJobs(){
     g.innerHTML=d.jobs.map(j=>`
       <div style="background:#1a1a2e;border-radius:10px;padding:10px;border:1px solid #2a2a4a;text-align:center">
         <div style="display:flex;gap:6px;justify-content:center;margin-bottom:6px">
-          <img src="${j.imageUrl}" class="thumb" onclick="preview('${j.imageUrl}')" title="原图">
-          ${j.resultUrl?`<img src="${j.resultUrl}" class="thumb" onclick="preview('${j.resultUrl}')" title="结果">`:`<div class="thumb" style="background:#222;display:flex;align-items:center;justify-content:center;color:#666;font-size:10px">处理中</div>`}
+          <img src="/.netlify/functions/image-proxy?url=${encodeURIComponent(j.imageUrl)}" class="thumb" onclick="preview('/.netlify/functions/image-proxy?url=${encodeURIComponent(j.imageUrl)}')" title="原图">
+          ${j.resultUrl?`<img src="/.netlify/functions/image-proxy?url=${encodeURIComponent(j.resultUrl)}" class="thumb" onclick="preview('/.netlify/functions/image-proxy?url=${encodeURIComponent(j.resultUrl)}')" title="结果">`:`<div class="thumb" style="background:#222;display:flex;align-items:center;justify-content:center;color:#666;font-size:10px">处理中</div>`}
         </div>
         <span class="badge ${j.status==='done'?'bg-done':'bg-proc'}">${j.status==='done'?'✅完成':'⏳处理中'}</span>
         <div style="font-size:11px;color:#888;margin-top:4px">${j.keyId}</div>
