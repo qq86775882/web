@@ -63,6 +63,7 @@ export default async function handler(req) {
       const vData = await vRes.json();
       if (!vData.ok) return Response.json({ error: vData.error || '密钥无效' }, { status: vRes.status });
       recordId = vData.recordId;
+      const quotaInfo = { quota: vData.quota, remaining: vData.remaining };
       console.log(`✅ 密钥验证通过, recordId=${recordId}`);
     } catch (e) {
       console.warn('⚠️ 密钥验证失败:', e.message);
@@ -75,7 +76,7 @@ export default async function handler(req) {
     // ── 编码 jobId ──
     const jobId = encodeJob({ token, segmentId: segId, imageUrl: myUrl, actionType, stage: 'segmenting', recordId });
 
-    return Response.json({ success: true, jobId, imageUrl: myUrl, hint: '轮询 POST /check-job' });
+    return Response.json({ success: true, jobId, imageUrl: myUrl, quota: quotaInfo, hint: '轮询 POST /check-job' });
 
   } catch (e) {
     return Response.json({ error: e.message }, { status: 500 });

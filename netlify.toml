@@ -15,6 +15,12 @@
 [functions."admin"]
   timeout = 30
 
+# 根路由 → 后台登录页
+[[redirects]]
+  from = "/"
+  to = "/admin.html"
+  status = 200
+
 [[redirects]]
   from = "/api/*"
   to = "https://api.myimg.ai/api/:splat"

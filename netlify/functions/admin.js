@@ -118,7 +118,7 @@ async function doVerifyKey(body) {
     await s.set('jobs', JSON.stringify(jobs));
   }
 
-  return Response.json({ ok: true, keyId: match.id, recordId, label: match.label });
+  return Response.json({ ok: true, keyId: match.id, recordId, label: match.label, quota: match.quota, remaining: match.quota - match.used });
 }
 
 async function doCompleteJob(body) {
