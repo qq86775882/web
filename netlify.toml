@@ -4,6 +4,13 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[functions."start-job"]
+  timeout = 15
+
+[functions."check-job"]
+  timeout = 25
 
 [[redirects]]
   from = "/api/*"
