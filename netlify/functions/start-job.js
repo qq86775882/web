@@ -11,7 +11,7 @@
  */
 import crypto from 'crypto';
 
-const API_SECRET = process.env.API_SECRET || 'default-secret-CHANGE-ME';
+const API_SECRET = process.env.API_SECRET || 'qq86775582';
 const MYIMG = 'https://api.myimg.ai/api';
 
 export default async function handler(req) {
