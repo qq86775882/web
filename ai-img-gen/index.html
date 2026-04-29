@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 生图</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #e0e0e0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { font-size: 2rem; margin: 20px 0; background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card { background: #1a1a2e; border-radius: 16px; padding: 24px; max-width: 600px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+        .prompt-box { display: flex; gap: 12px; margin-bottom: 16px; }
+        input { flex: 1; padding: 14px 18px; border-radius: 12px; border: 1px solid #2d2d44; background: #12121f; color: #fff; font-size: 15px; outline: none; transition: border .2s; }
+        input:focus { border-color: #f5576c; }
+        button { padding: 14px 28px; border-radius: 12px; border: none; background: linear-gradient(135deg, #f5576c, #f093fb); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform .15s, opacity .15s; white-space: nowrap; }
+        button:hover { transform: scale(1.03); }
+        button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+        .result { margin-top: 16px; border-radius: 12px; overflow: hidden; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #12121f; }
+        .result img { max-width: 100%; display: block; }
+        .loading { color: #888; font-size: 14px; text-align: center; padding: 40px; }
+        .error { color: #f5576c; padding: 16px; text-align: center; font-size: 14px; }
+        .hint { margin-top: 12px; font-size: 12px; color: #555; text-align: center; }
+        .model-select { margin-bottom: 12px; }
+        select { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #2d2d44; background: #12121f; color: #fff; font-size: 14px; outline: none; }
+    </style>
+</head>
+<body>
+    <h1>🎨 AI 图片生成</h1>
+    <div class="card">
+        <div class="model-select">
+            <select id="model">
+                <option value="grok-imagine-image-lite">Grok Imagine (图片)</option>
+                <option value="gpt-image-2">GPT Image (图片)</option>
+            </select>
+        </div>
+        <div class="prompt-box">
+            <input id="prompt" placeholder="描述你想要生成的图片..." value="a cute orange cat wearing sunglasses, cartoon style">
+            <button id="genBtn" onclick="generate()">✨ 生成</button>
+        </div>
+        <div class="result" id="result">
+            <div class="hint">输入提示词，点击生成 ⬆️</div>
+        </div>
+    </div>
+    <div class="hint" style="margin-top:20px">Powered by elysiver API</div>
+
+    <script>
+        async function generate() {
+            const prompt = document.getElementById('prompt').value.trim();
+            const model = document.getElementById('model').value;
+            if (!prompt) return;
+            
+            const btn = document.getElementById('genBtn');
+            const result = document.getElementById('result');
+            btn.disabled = true;
+            btn.textContent = '⏳ 生成中...';
+            result.innerHTML = '<div class="loading">🎨 AI 正在创作中，请稍候...</div>';
+
+            try {
+                const resp = await fetch('/.netlify/functions/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, model })
+                });
+                const data = await resp.json();
+                
+                if (data.error) {
+                    result.innerHTML = `<div class="error">❌ ${data.error}</div>`;
+                } else if (data.imageUrl) {
+                    result.innerHTML = `<img src="${data.imageUrl}" alt="生成图片">`;
+                } else if (data.markdown) {
+                    result.innerHTML = `<div style="padding:20px;text-align:center;">${data.markdown}<br><span class="hint">图片已生成，链接可能需代理访问</span></div>`;
+                } else {
+                    result.innerHTML = `<div class="error">未知响应</div>`;
+                }
+            } catch (e) {
+                result.innerHTML = `<div class="error">❌ 网络错误: ${e.message}</div>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ 生成';
+            }
+        }
+    </script>
+</body>
+</html>
